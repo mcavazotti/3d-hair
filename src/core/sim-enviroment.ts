@@ -69,7 +69,21 @@ export class SimEnvironment {
         });
 
         this.guiControlObject = {
-            mainObject: 'cube'
+            mainObject: 'cube',
+            fixedDeltaTime: false,
+            runSimulation: true,
+            simulateStep: () => {
+                this.hair.simulateCycle(1 / 60);
+            },
+            reset: () => {
+                this.mainObject.position.x = 0;
+                this.mainObject.position.y = 0.5;
+                this.mainObject.position.z = 0;
+
+                this.hair.geometry.dispose();
+                this.hair.createHair(this.mainObject);
+            }
+
         };
 
         this.setupGui();
@@ -82,10 +96,12 @@ export class SimEnvironment {
     }
 
     private loop(timestamp: number) {
-        const deltaTime = timestamp - this.prevTimestamp;
+        const deltaTime = (timestamp - this.prevTimestamp) / 1000;
         this.prevTimestamp = timestamp;
 
-        this.hair.simulateCycle(deltaTime);
+        if (this.guiControlObject.runSimulation)
+            this.hair.simulateCycle(this.guiControlObject.fixedDeltaTime ? 1 / 60 : deltaTime);
+
         this.renderer.render(this.scene, this.camera);
         requestAnimationFrame(this.loop.bind(this));
     }
@@ -96,6 +112,7 @@ export class SimEnvironment {
         const objFolder = this.gui.addFolder('Main Object');
 
         objFolder.add(this.guiControlObject, 'mainObject', ['cube', 'sphere', 'plane']).onChange((val: string) => {
+            this.mainObject.geometry.dispose();
             switch (val) {
                 case 'cube':
                     this.mainObject.geometry = new BoxGeometry(1, 1, 1);
@@ -107,7 +124,30 @@ export class SimEnvironment {
                     this.mainObject.geometry = new PlaneGeometry();
                     break;
             }
+            this.hair.createHair(this.mainObject);
         });
         objFolder.add(this.mainObject.material, 'wireframe');
+
+        const simFolder = this.gui.addFolder('Simulation Parameters')
+        simFolder.add(this.hair.hairParameters, 'numberOfSegments', 1, undefined, 1).onChange(() => {
+            this.hair.geometry.dispose();
+            this.hair.createHair(this.mainObject);
+        });
+        simFolder.add(this.hair.hairParameters, 'segmentLength', 0).onChange(() => {
+            this.hair.geometry.dispose();
+            this.hair.createHair(this.mainObject);
+        });
+
+        const gravity = simFolder.addFolder('Gravity');
+        gravity.add(this.hair.simulationParameters.gravity, 'x');
+        gravity.add(this.hair.simulationParameters.gravity, 'y');
+        gravity.add(this.hair.simulationParameters.gravity, 'x');
+
+        simFolder.add(this.hair.simulationParameters, 'damping');
+        simFolder.add(this.hair.simulationParameters, 'steps', 1, undefined, 1);
+
+        simFolder.add(this.guiControlObject, 'runSimulation');
+        simFolder.add(this.guiControlObject, 'simulateStep');
+        simFolder.add(this.guiControlObject, 'reset');
     }
 }

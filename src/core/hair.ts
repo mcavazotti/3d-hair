@@ -1,6 +1,7 @@
 import { BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments, Mesh, StreamDrawUsage, Vector3 } from "three";
 import { HairParameters, SimulationParameters } from "../types/configs";
 import { Strand } from "../types/particle";
+import { distanceConstraint } from "./constraints";
 
 export class Hair {
     hairParameters: HairParameters;
@@ -11,12 +12,14 @@ export class Hair {
 
     constructor() {
         this.hairParameters = {
-            numberOfSegments: 5,
+            numberOfSegments: 20,
             segmentLength: 0.1,
         };
 
         this.simulationParameters = {
-            gravity: new Vector3(0, -10, 0)
+            gravity: new Vector3(0, -10, 0),
+            damping: 0.1,
+            steps: 1
         };
         this.geometry = new BufferGeometry();
         this.object3D = new LineSegments(this.geometry, new LineBasicMaterial({ color: 0xaaaa00 }));
@@ -37,7 +40,7 @@ export class Hair {
         this.strands = []
         for (let i = 0; i < positionBuffer.array.length; i += positionBuffer.itemSize) {
             const baseVertex = new Vector3(positionBuffer.array[i], positionBuffer.array[i + 1], positionBuffer.array[i + 2]);
-            const transformedVertex = baseVertex.add(worldPosition);
+            const transformedVertex = baseVertex.clone().add(worldPosition);
 
             const direction = new Vector3(normalBuffer.array[i], normalBuffer.array[i + 1], normalBuffer.array[i + 2]);
             direction.applyEuler(worldRotation);
@@ -80,9 +83,17 @@ export class Hair {
 
         const vertexBuffer = this.geometry.attributes['position'] as BufferAttribute;
         vertexBuffer.set(vertices);
+        this.geometry.attributes['position'].needsUpdate = true;
     }
 
     simulateCycle(deltaTime: number) {
+        for (let i = 0; i < this.simulationParameters.steps; i++)
+            this.simulateStep(deltaTime / this.simulationParameters.steps);
+        this.updateGeometry();
+    }
+
+    simulateStep(deltaTime: number) {
+        console.log('SIMULATE: Dt =' + deltaTime)
         for (const strand of this.strands) {
             for (let i = 0; i < strand.length; i++) {
                 const particle = strand[i];
@@ -93,13 +104,15 @@ export class Hair {
                 }
 
                 particle.prevPos.copy(particle.position);
-                particle.position.addScaledVector(this.simulationParameters.gravity, deltaTime);
+                particle.position.addScaledVector(particle.velocity.addScaledVector(this.simulationParameters.gravity, deltaTime).multiplyScalar(1 - this.simulationParameters.damping), deltaTime);
 
                 /** SOLVE CONSTRAINTS */
+                distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength);
 
+                /** UPDATE VELOCITIES*/
+                particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
+                continue;
             }
         }
-
-        this.updateGeometry();
     }
 }
