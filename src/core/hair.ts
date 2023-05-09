@@ -110,7 +110,8 @@ export class Hair {
 
                 /** UPDATE VELOCITIES*/
                 particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
-                strand[i - 1].velocity.add(correction.multiplyScalar(-1 * this.simulationParameters.damping * (1 / deltaTime)));
+                if(i > 1)
+                    strand[i - 1].velocity.add(correction.multiplyScalar(-1 * this.simulationParameters.damping * (1 / deltaTime)));
                 continue;
             }
         }
