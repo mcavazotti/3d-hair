@@ -93,7 +93,6 @@ export class Hair {
     }
 
     simulateStep(deltaTime: number) {
-        console.log('SIMULATE: Dt =' + deltaTime)
         for (const strand of this.strands) {
             for (let i = 0; i < strand.length; i++) {
                 const particle = strand[i];

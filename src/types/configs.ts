@@ -17,4 +17,5 @@ export interface GuiControlObject {
     fixedDeltaTime: boolean;
     reset: Function;
     runSimulation: boolean;
+    openStats:Function;
 }

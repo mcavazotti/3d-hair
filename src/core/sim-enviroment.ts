@@ -4,6 +4,7 @@ import { DragControls } from "../third_party/DragControls";
 import GUI from "lil-gui";
 import { GuiControlObject } from "../types/configs";
 import { Hair } from "./hair";
+import { StatsEnvironment } from "./stats-environment";
 
 export class SimEnvironment {
     private renderer: WebGLRenderer;
@@ -16,6 +17,7 @@ export class SimEnvironment {
     private dragControl: DragControls;
     private gui!: GUI;
     private guiControlObject: GuiControlObject;
+    private statsEnv?: StatsEnvironment;
 
     private prevTimestamp!: number;
 
@@ -74,6 +76,9 @@ export class SimEnvironment {
             runSimulation: true,
             simulateStep: () => {
                 this.hair.simulateCycle(1 / 60);
+                if (this.statsEnv) {
+                    this.statsEnv.updateData(this.hair.strands.flat(), this.hair.simulationParameters.gravity.length());
+                }
             },
             reset: () => {
                 this.mainObject.position.x = 0;
@@ -82,6 +87,15 @@ export class SimEnvironment {
 
                 this.hair.geometry.dispose();
                 this.hair.createHair(this.mainObject);
+            },
+            openStats: () => {
+                const statsPopUp = window.open('about:blank', 'stats', 'width=500,height=500');
+                if (statsPopUp) {
+                    this.statsEnv = new StatsEnvironment(statsPopUp.document);
+                    statsPopUp.addEventListener('close', () => {
+                        this.statsEnv = undefined;
+                    })
+                }
             }
 
         };
@@ -99,8 +113,13 @@ export class SimEnvironment {
         const deltaTime = (timestamp - this.prevTimestamp) / 1000;
         this.prevTimestamp = timestamp;
 
-        if (this.guiControlObject.runSimulation)
+        if (this.guiControlObject.runSimulation) {
             this.hair.simulateCycle(this.guiControlObject.fixedDeltaTime ? 1 / 60 : deltaTime);
+
+            if (this.statsEnv) {
+                this.statsEnv.updateData(this.hair.strands.flat(), this.hair.simulationParameters.gravity.length());
+            }
+        }
 
         this.renderer.render(this.scene, this.camera);
         requestAnimationFrame(this.loop.bind(this));
@@ -108,6 +127,7 @@ export class SimEnvironment {
 
     private setupGui() {
         this.gui = new GUI();
+        this.gui.add(this.guiControlObject, 'openStats');
 
         const objFolder = this.gui.addFolder('Main Object');
 
