@@ -163,7 +163,7 @@ export class SimEnvironment {
         gravity.add(this.hair.simulationParameters.gravity, 'y');
         gravity.add(this.hair.simulationParameters.gravity, 'x');
 
-        simFolder.add(this.hair.simulationParameters, 'damping');
+        simFolder.add(this.hair.simulationParameters, 'damping',0,1);
         simFolder.add(this.hair.simulationParameters, 'steps', 1, 1000, 1);
 
         simFolder.add(this.guiControlObject, 'runSimulation');

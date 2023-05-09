@@ -18,7 +18,7 @@ export class Hair {
 
         this.simulationParameters = {
             gravity: new Vector3(0, -10, 0),
-            damping: 0.1,
+            damping: 0.9,
             steps: 1
         };
         this.geometry = new BufferGeometry();
@@ -103,13 +103,14 @@ export class Hair {
                 }
 
                 particle.prevPos.copy(particle.position);
-                particle.position.addScaledVector(particle.velocity.addScaledVector(this.simulationParameters.gravity, deltaTime).multiplyScalar(1 - this.simulationParameters.damping), deltaTime);
+                particle.position.addScaledVector(particle.velocity.addScaledVector(this.simulationParameters.gravity, deltaTime), deltaTime);
 
                 /** SOLVE CONSTRAINTS */
-                distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength);
+                const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength);
 
                 /** UPDATE VELOCITIES*/
                 particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
+                strand[i - 1].velocity.add(correction.multiplyScalar(-1 * this.simulationParameters.damping * (1 / deltaTime)));
                 continue;
             }
         }
