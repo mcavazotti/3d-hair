@@ -149,11 +149,11 @@ export class SimEnvironment {
         objFolder.add(this.mainObject.material, 'wireframe');
 
         const simFolder = this.gui.addFolder('Simulation Parameters')
-        simFolder.add(this.hair.hairParameters, 'numberOfSegments', 1, undefined, 1).onChange(() => {
+        simFolder.add(this.hair.hairParameters, 'numberOfSegments', 1, 100, 1).onChange(() => {
             this.hair.geometry.dispose();
             this.hair.createHair(this.mainObject);
         });
-        simFolder.add(this.hair.hairParameters, 'segmentLength', 0).onChange(() => {
+        simFolder.add(this.hair.hairParameters, 'segmentLength', 0,10).onChange(() => {
             this.hair.geometry.dispose();
             this.hair.createHair(this.mainObject);
         });
@@ -164,7 +164,7 @@ export class SimEnvironment {
         gravity.add(this.hair.simulationParameters.gravity, 'x');
 
         simFolder.add(this.hair.simulationParameters, 'damping');
-        simFolder.add(this.hair.simulationParameters, 'steps', 1, undefined, 1);
+        simFolder.add(this.hair.simulationParameters, 'steps', 1, 1000, 1);
 
         simFolder.add(this.guiControlObject, 'runSimulation');
         simFolder.add(this.guiControlObject, 'simulateStep');
