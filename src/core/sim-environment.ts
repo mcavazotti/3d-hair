@@ -5,6 +5,7 @@ import GUI from "lil-gui";
 import { GuiControlObject } from "../types/configs";
 import { Hair } from "./hair";
 import { StatsEnvironment } from "./stats-environment";
+import { PopUp } from "../auxiliary/popup";
 
 export class SimEnvironment {
     private renderer: WebGLRenderer;
@@ -89,12 +90,11 @@ export class SimEnvironment {
                 this.hair.createHair(this.mainObject);
             },
             openStats: () => {
-                const statsPopUp = window.open('about:blank', 'stats', 'width=500,height=500');
-                if (statsPopUp) {
-                    this.statsEnv = new StatsEnvironment(statsPopUp.document);
-                    statsPopUp.addEventListener('close', () => {
+                if (!this.statsEnv) {
+                    const popup = new PopUp(() => {
                         this.statsEnv = undefined;
-                    })
+                    });
+                    this.statsEnv = popup.getStatsEnv();
                 }
             }
 
@@ -153,7 +153,7 @@ export class SimEnvironment {
             this.hair.geometry.dispose();
             this.hair.createHair(this.mainObject);
         });
-        simFolder.add(this.hair.hairParameters, 'segmentLength', 0,10).onChange(() => {
+        simFolder.add(this.hair.hairParameters, 'segmentLength', 0, 10).onChange(() => {
             this.hair.geometry.dispose();
             this.hair.createHair(this.mainObject);
         });
@@ -163,7 +163,7 @@ export class SimEnvironment {
         gravity.add(this.hair.simulationParameters.gravity, 'y');
         gravity.add(this.hair.simulationParameters.gravity, 'x');
 
-        simFolder.add(this.hair.simulationParameters, 'damping',0,1);
+        simFolder.add(this.hair.simulationParameters, 'damping', 0, 1);
         simFolder.add(this.hair.simulationParameters, 'steps', 1, 1000, 1);
 
         simFolder.add(this.guiControlObject, 'runSimulation');

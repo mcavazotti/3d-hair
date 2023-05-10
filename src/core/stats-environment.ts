@@ -9,12 +9,12 @@ export class StatsEnvironment {
         total: [] as number[],
     }
 
-    constructor(popUpDocument: Document) {
+    constructor(popUpBody: HTMLElement) {
         // popUpDocument.body.innerHTML = `<canvas id="energy" width=400 height=400></canvas>`;
-        const element = popUpDocument.createElement('canvas');
+        const element = document.createElement('canvas');
         element.setAttribute('width', '400');
         element.setAttribute('height', '400');
-        popUpDocument.body.appendChild(element);
+        popUpBody.appendChild(element);
         this.energyChart = new Chart(element, {
             type: 'line',
             data: {
