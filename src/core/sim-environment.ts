@@ -66,8 +66,14 @@ export class SimEnvironment {
         this.dragControl.addEventListener('hoveron', () => {
             this.cameraControl.enabled = false;
         });
+        this.dragControl.addEventListener('dragstart', () => {
+            this.cameraControl.enabled = false;
+        });
 
         this.dragControl.addEventListener('hoveroff', () => {
+            this.cameraControl.enabled = true;
+        });
+        this.dragControl.addEventListener('dragend', () => {
             this.cameraControl.enabled = true;
         });
 
