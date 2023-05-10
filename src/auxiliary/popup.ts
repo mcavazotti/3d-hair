@@ -21,28 +21,28 @@ export class PopUp {
         this.stats = new StatsEnvironment(document.getElementById('popup-body')!);
         this.header = document.getElementById('popup-header')! as HTMLDivElement;
 
-        this.header.addEventListener('mousedown', (event) => {
+        this.dialog.addEventListener('mousedown', (event) => {
             this.clicked = event.button == 0;
             this.clickPos = new Vector2(event.clientX, event.clientY);
             this.headerInitialPos = new Vector2(this.dialog.offsetLeft, this.dialog.offsetTop);
         });
-        this.header.addEventListener('touchstart', (event) => {
+        this.dialog.addEventListener('touchstart', (event) => {
             this.clicked = event.touches.length == 1;
             this.clickPos = new Vector2(event.touches[0].clientX, event.touches[0].clientY);
             this.headerInitialPos = new Vector2(this.dialog.offsetLeft, this.dialog.offsetTop);
         });
-        this.header.addEventListener('mouseup', () => {
+        this.dialog.addEventListener('mouseup', () => {
             this.clicked = false;
             this.clickPos = undefined;
             this.headerInitialPos = undefined;
         });
-        this.header.addEventListener('touchend', () => {
+        this.dialog.addEventListener('touchend', () => {
             this.clicked = false;
             this.clickPos = undefined;
             this.headerInitialPos = undefined;
         });
 
-        this.header.addEventListener('mousemove', (event) => {
+        this.dialog.addEventListener('mousemove', (event) => {
             if (this.clicked) {
                 // console.log(event)
                 const x = (this.headerInitialPos!.x + event.clientX - this.clickPos!.x);
@@ -53,7 +53,7 @@ export class PopUp {
                 this.dialog.style.top = y + 'px';
             }
         });
-        this.header.addEventListener('touchmove', (event) => {
+        this.dialog.addEventListener('touchmove', (event) => {
             if (this.clicked && event.touches.length == 1) {
                 // console.log(event)
                 const x = (this.headerInitialPos!.x + event.touches[0].clientX - this.clickPos!.x);
@@ -64,7 +64,7 @@ export class PopUp {
                 this.dialog.style.top = y + 'px';
             }
         });
-        this.header.addEventListener('mouseleave', () => {
+        this.dialog.addEventListener('mouseleave', () => {
             this.clicked = false;
             this.clickPos = undefined;
         });
