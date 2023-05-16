@@ -2,7 +2,7 @@ import { BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments, Mesh,
 import { HairParameters, SimulationParameters } from "../types/configs";
 import { Strand } from "../types/particle";
 import { distanceConstraint } from "./constraints";
-
+    
 export class Hair {
     hairParameters: HairParameters;
     simulationParameters: SimulationParameters;
@@ -19,7 +19,8 @@ export class Hair {
         this.simulationParameters = {
             gravity: new Vector3(0, -10, 0),
             damping: 0.9,
-            steps: 1
+            steps: 1,
+            coliders: []
         };
         this.geometry = new BufferGeometry();
         this.object3D = new LineSegments(this.geometry, new LineBasicMaterial({ color: 0xaaaa00 }));

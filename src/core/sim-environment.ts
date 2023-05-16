@@ -1,4 +1,4 @@
-import { AxesHelper, BoxGeometry, BufferGeometry, Color, GridHelper, HemisphereLight, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Scene, SphereGeometry, Vector3, WebGLRenderer } from "three";
+import { AxesHelper, BoxGeometry, Color, GridHelper, HemisphereLight, MeshStandardMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Scene, SphereGeometry, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from "../third_party/OrbitControls";
 import { DragControls } from "../third_party/DragControls";
 import GUI from "lil-gui";
@@ -6,13 +6,14 @@ import { GuiControlObject } from "../types/configs";
 import { Hair } from "./hair";
 import { StatsEnvironment } from "./stats-environment";
 import { PopUp } from "../auxiliary/popup";
+import { ExtendedBufferGeometry, ExtendedMesh } from "../auxiliary/extended-types";
 
 export class SimEnvironment {
     private renderer: WebGLRenderer;
     private scene: Scene;
     private camera: PerspectiveCamera;
     private cameraControl: OrbitControls;
-    private mainObject: Mesh;
+    private mainObject: ExtendedMesh;
     private hair: Hair;
     private auxiliaryObjects: Map<string, Object3D>;
     private dragControl: DragControls;
@@ -37,15 +38,16 @@ export class SimEnvironment {
 
         this.cameraControl = new OrbitControls(this.camera, this.renderer.domElement);
 
-        const geometry = new BoxGeometry(1, 1, 1);
+        const geometry = new ExtendedBufferGeometry(new BoxGeometry(1, 1, 1));
         const material = new MeshStandardMaterial({ color: 0x886644 });
-        this.mainObject = new Mesh<BufferGeometry, MeshStandardMaterial>(geometry, material);
+        this.mainObject = new ExtendedMesh<ExtendedBufferGeometry, MeshStandardMaterial>(geometry, material);
         this.mainObject.position.y = 0.5;
         this.scene.add(this.mainObject);
 
         this.hair = new Hair();
         this.mainObject.add(this.hair.object3D);
         this.hair.createHair(this.mainObject);
+        this.hair.simulationParameters.coliders = [this.mainObject]
 
         this.auxiliaryObjects = new Map<string, Object3D>([
             ['light', new HemisphereLight(0xffffff, 0x444444)],
@@ -141,13 +143,13 @@ export class SimEnvironment {
             this.mainObject.geometry.dispose();
             switch (val) {
                 case 'cube':
-                    this.mainObject.geometry = new BoxGeometry(1, 1, 1);
+                    this.mainObject.geometry = new ExtendedBufferGeometry(new BoxGeometry(1, 1, 1));
                     break;
                 case 'sphere':
-                    this.mainObject.geometry = new SphereGeometry(0.5);
+                    this.mainObject.geometry = new ExtendedBufferGeometry(new SphereGeometry(0.5));
                     break;
                 case 'plane':
-                    this.mainObject.geometry = new PlaneGeometry();
+                    this.mainObject.geometry = new ExtendedBufferGeometry(new PlaneGeometry());
                     break;
             }
             this.hair.createHair(this.mainObject);

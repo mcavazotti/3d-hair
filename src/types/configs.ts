@@ -1,4 +1,5 @@
 import { Vector3 } from "three";
+import { ExtendedMesh } from "../auxiliary/extended-types";
 
 export interface HairParameters {
     numberOfSegments: number;
@@ -9,6 +10,7 @@ export interface SimulationParameters {
     gravity: Vector3;
     damping: number;
     steps: number;
+    coliders: ExtendedMesh[];
 }
 
 export interface GuiControlObject {
