@@ -12,7 +12,7 @@ export class ExtendedMesh<
 }
 
 export class ExtendedBufferGeometry extends BufferGeometry {
-    boundsTree: any;
+    boundsTree: MeshBVH;
     constructor(bg: BufferGeometry) {
         super();
         this.copy(bg);

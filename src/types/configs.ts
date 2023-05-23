@@ -10,7 +10,7 @@ export interface SimulationParameters {
     gravity: Vector3;
     damping: number;
     steps: number;
-    coliders: ExtendedMesh[];
+    colliders: ExtendedMesh[];
 }
 
 export interface GuiControlObject {

@@ -47,7 +47,7 @@ export class SimEnvironment {
         this.hair = new Hair();
         this.mainObject.add(this.hair.object3D);
         this.hair.createHair(this.mainObject);
-        this.hair.simulationParameters.coliders = [this.mainObject]
+        this.hair.simulationParameters.colliders = [this.mainObject]
 
         this.auxiliaryObjects = new Map<string, Object3D>([
             ['light', new HemisphereLight(0xffffff, 0x444444)],
