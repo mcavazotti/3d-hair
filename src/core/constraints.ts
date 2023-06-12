@@ -17,11 +17,15 @@ export function penetrationContraint(particle: Particle, collider: ExtendedBuffe
     const target = bvh.shapecast({
         intersectsBounds: (box) => box.containsPoint(particle.position),
         intersectsTriangle: (triangle) => {
-            const vec = new Vector3()
-            triangle.closestPointToPoint(particle.position,vec)
-            if(vec.sub(particle.position).length() < 0.1)
-                console.log(vec);
+            const vec = particle.position.clone().sub(triangle.a);
+            const normal = new Vector3();
+            triangle.getNormal(normal);
+            const projection = vec.dot(normal.normalize());
+            if(projection < 0.01) {
+                // console.log(vec);
+                particle.position.add(normal.multiplyScalar(0.01- projection));
                 return true;
+            }
             return false;
         }
     });
