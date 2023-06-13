@@ -1,9 +1,9 @@
 import { BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments, Mesh, StreamDrawUsage, Vector3 } from "three";
 import { HairParameters, SimulationParameters } from "../types/configs";
-import { Strand } from "../types/particle";
+import { Strand, Particle } from "../types/particle";
 import { distanceConstraint, penetrationContraint } from "./constraints";
 import { ExtendedBufferGeometry } from "../auxiliary/extended-types";
-    
+
 export class Hair {
     hairParameters: HairParameters;
     simulationParameters: SimulationParameters;
@@ -109,12 +109,19 @@ export class Hair {
 
                 /** SOLVE CONSTRAINTS */
                 const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength);
-                if(i > 0)
-                    penetrationContraint(particle, this.simulationParameters.colliders[0].geometry as ExtendedBufferGeometry);
+                if (i > 0) {
+                    const p: Particle = {
+                        position: this.object3D.worldToLocal(particle.position),
+                        prevPos: new Vector3(),
+                        velocity: new Vector3()
+                    }
+                    penetrationContraint(p, this.simulationParameters.colliders[0].geometry as ExtendedBufferGeometry);
+                    particle.position = this.object3D.localToWorld(p.position);
+                }
 
                 /** UPDATE VELOCITIES*/
                 particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
-                if(i > 1)
+                if (i > 1)
                     strand[i - 1].velocity.add(correction.multiplyScalar(-1 * this.simulationParameters.damping * (1 / deltaTime)));
                 continue;
             }

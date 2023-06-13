@@ -7,6 +7,7 @@ import { Hair } from "./hair";
 import { StatsEnvironment } from "./stats-environment";
 import { PopUp } from "../auxiliary/popup";
 import { ExtendedBufferGeometry, ExtendedMesh } from "../auxiliary/extended-types";
+// import { MeshBVHVisualizer } from "three-mesh-bvh";
 
 export class SimEnvironment {
     private renderer: WebGLRenderer;
@@ -20,6 +21,7 @@ export class SimEnvironment {
     private gui!: GUI;
     private guiControlObject: GuiControlObject;
     private statsEnv?: StatsEnvironment;
+    // private bvhViz: MeshBVHVisualizer;
 
     private prevTimestamp!: number;
 
@@ -43,6 +45,9 @@ export class SimEnvironment {
         this.mainObject = new ExtendedMesh<ExtendedBufferGeometry, MeshStandardMaterial>(geometry, material);
         this.mainObject.position.y = 0.5;
         this.scene.add(this.mainObject);
+
+        // this.bvhViz = new MeshBVHVisualizer(this.mainObject, 10);
+        // this.scene.add(this.bvhViz);
 
         this.hair = new Hair();
         this.mainObject.add(this.hair.object3D);
@@ -153,6 +158,7 @@ export class SimEnvironment {
                     break;
             }
             this.hair.createHair(this.mainObject);
+            // this.bvhViz.update();
         });
         objFolder.add(this.mainObject.material, 'wireframe');
 
