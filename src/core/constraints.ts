@@ -15,7 +15,7 @@ export function distanceConstraint(particle: Particle, other: Particle, restDist
 export function penetrationContraint(particle: Particle, collider: ExtendedBufferGeometry) {
     const bvh = collider.boundsTree;
     
-    const target = bvh.shapecast({
+    bvh.shapecast({
         intersectsBounds: (box) => box.containsPoint(particle.position)? CONTAINED: NOT_INTERSECTED ,
         intersectsTriangle: (triangle) => {
             const vec = particle.position.clone().sub(triangle.a);
