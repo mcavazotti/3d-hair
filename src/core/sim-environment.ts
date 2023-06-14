@@ -1,4 +1,4 @@
-import { AxesHelper, BoxGeometry, Color, GridHelper, HemisphereLight, MeshStandardMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Scene, SphereGeometry, Vector3, WebGLRenderer } from "three";
+import { AxesHelper, Color, GridHelper, HemisphereLight, MeshStandardMaterial, Object3D, PerspectiveCamera, Scene, SphereGeometry, Vector3, WebGLRenderer } from "three";
 import { OrbitControls } from "../third_party/OrbitControls";
 import { DragControls } from "../third_party/DragControls";
 import GUI from "lil-gui";
