@@ -11,6 +11,15 @@ export function distanceConstraint(particle: Particle, other: Particle, restDist
     return correction;
 }
 
+export function spherePenetrationConstraint(particle: Particle, position: Vector3, radius: number) {
+    const dist = particle.position.distanceTo(position);
+    if (dist < (radius + 0.01)) {
+        const normal = position.clone().sub(particle.position);
+        const correction = normal.normalize().multiplyScalar(-(radius + 0.01 - dist));
+        particle.position.add(correction);
+    }
+}
+
 export function penetrationContraint(particle: Particle, collider: ExtendedBufferGeometry) {
     const bvh = collider.boundsTree;
     

@@ -40,7 +40,7 @@ export class SimEnvironment {
 
         this.cameraControl = new OrbitControls(this.camera, this.renderer.domElement);
 
-        const geometry = new ExtendedBufferGeometry(new BoxGeometry(1, 1, 1));
+        const geometry = new ExtendedBufferGeometry(new SphereGeometry(0.5));
         const material = new MeshStandardMaterial({ color: 0x886644 });
         this.mainObject = new ExtendedMesh<ExtendedBufferGeometry, MeshStandardMaterial>(geometry, material);
         this.mainObject.position.y = 0.5;
@@ -144,22 +144,22 @@ export class SimEnvironment {
 
         const objFolder = this.gui.addFolder('Main Object');
 
-        objFolder.add(this.guiControlObject, 'mainObject', ['cube', 'sphere', 'plane']).onChange((val: string) => {
-            this.mainObject.geometry.dispose();
-            switch (val) {
-                case 'cube':
-                    this.mainObject.geometry = new ExtendedBufferGeometry(new BoxGeometry(1, 1, 1));
-                    break;
-                case 'sphere':
-                    this.mainObject.geometry = new ExtendedBufferGeometry(new SphereGeometry(0.5));
-                    break;
-                case 'plane':
-                    this.mainObject.geometry = new ExtendedBufferGeometry(new PlaneGeometry());
-                    break;
-            }
-            this.hair.createHair(this.mainObject);
-            // this.bvhViz.update();
-        });
+        // objFolder.add(this.guiControlObject, 'mainObject', ['cube', 'sphere', 'plane']).onChange((val: string) => {
+        //     this.mainObject.geometry.dispose();
+        //     switch (val) {
+        //         case 'cube':
+        //             this.mainObject.geometry = new ExtendedBufferGeometry(new BoxGeometry(1, 1, 1));
+        //             break;
+        //         case 'sphere':
+        //             this.mainObject.geometry = new ExtendedBufferGeometry(new SphereGeometry(0.5));
+        //             break;
+        //         case 'plane':
+        //             this.mainObject.geometry = new ExtendedBufferGeometry(new PlaneGeometry());
+        //             break;
+        //     }
+        //     this.hair.createHair(this.mainObject);
+        //     // this.bvhViz.update();
+        // });
         objFolder.add(this.mainObject.material, 'wireframe');
 
         const simFolder = this.gui.addFolder('Simulation Parameters')

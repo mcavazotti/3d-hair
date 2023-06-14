@@ -1,8 +1,9 @@
 import { BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments, Mesh, StreamDrawUsage, Vector3 } from "three";
 import { HairParameters, SimulationParameters } from "../types/configs";
 import { Strand, Particle } from "../types/particle";
-import { distanceConstraint, penetrationContraint } from "./constraints";
-import { ExtendedBufferGeometry } from "../auxiliary/extended-types";
+import { distanceConstraint, spherePenetrationConstraint } from "./constraints";
+// import { hairVertexShader } from "../assets/shaders/hair.vert";
+// import { hairFragmentShader } from "../assets/shaders/hair.frag";
 
 export class Hair {
     hairParameters: HairParameters;
@@ -25,6 +26,15 @@ export class Hair {
         };
         this.geometry = new BufferGeometry();
         this.object3D = new LineSegments(this.geometry, new LineBasicMaterial({ color: 0xaaaa00 }));
+        // this.object3D = new LineSegments(this.geometry, new ShaderMaterial({
+        //     vertexShader: hairVertexShader,
+        //     fragmentShader: hairFragmentShader,
+        //     lights: true,
+        //     uniforms: {
+        //         ...UniformsLib.lights,
+        //         uColor: { value: new Color(1.0, 1.0, 0.0)}
+        //     }
+        // }));
     }
 
     createHair(baseObject: Mesh) {
@@ -62,6 +72,8 @@ export class Hair {
         }));
         const vertexBuffer = new BufferAttribute(vertices, 3);
         vertexBuffer.usage = StreamDrawUsage;
+
+        // const normalBuffer = new BufferAttribute(3)
 
         const indices = this.strands.flatMap((strand, idx) => {
             const strandIndices: number[] = [idx * strand.length];
@@ -115,7 +127,7 @@ export class Hair {
                         prevPos: new Vector3(),
                         velocity: new Vector3()
                     }
-                    penetrationContraint(p, this.simulationParameters.colliders[0].geometry as ExtendedBufferGeometry);
+                    spherePenetrationConstraint(p, this.object3D.position,0.5);
                     particle.position = this.object3D.localToWorld(p.position);
                 }
 
