@@ -1,9 +1,9 @@
-import { BufferAttribute, BufferGeometry, LineBasicMaterial, LineSegments, Mesh, StreamDrawUsage, Vector3 } from "three";
+import { BufferAttribute, BufferGeometry, Color, GLSL3, LineSegments, Mesh, ShaderMaterial, StreamDrawUsage, UniformsLib, Vector3 } from "three";
 import { HairParameters, SimulationParameters } from "../types/configs";
 import { Strand, Particle } from "../types/particle";
 import { distanceConstraint, spherePenetrationConstraint } from "./constraints";
-// import { hairVertexShader } from "../assets/shaders/hair.vert";
-// import { hairFragmentShader } from "../assets/shaders/hair.frag";
+import { hairVertexShader } from "../assets/shaders/hair.vert";
+import { hairFragmentShader } from "../assets/shaders/hair.frag";
 
 export class Hair {
     hairParameters: HairParameters;
@@ -25,16 +25,17 @@ export class Hair {
             colliders: []
         };
         this.geometry = new BufferGeometry();
-        this.object3D = new LineSegments(this.geometry, new LineBasicMaterial({ color: 0xaaaa00 }));
-        // this.object3D = new LineSegments(this.geometry, new ShaderMaterial({
-        //     vertexShader: hairVertexShader,
-        //     fragmentShader: hairFragmentShader,
-        //     lights: true,
-        //     uniforms: {
-        //         ...UniformsLib.lights,
-        //         uColor: { value: new Color(1.0, 1.0, 0.0)}
-        //     }
-        // }));
+        // this.object3D = new LineSegments(this.geometry, new LineBasicMaterial({ color: 0xaaaa00 }));
+        this.object3D = new LineSegments(this.geometry, new ShaderMaterial({
+            vertexShader: hairVertexShader,
+            fragmentShader: hairFragmentShader,
+            lights: true,
+            glslVersion: GLSL3,
+            uniforms: {
+                ...UniformsLib.lights,
+                uColor: { value: new Color(0.2, 0.2, 0.05)}
+            }
+        }));
     }
 
     createHair(baseObject: Mesh) {
@@ -70,8 +71,22 @@ export class Hair {
             const pos = this.object3D.worldToLocal(p.position.clone());
             return [pos.x, pos.y, pos.z];
         }));
+
+        const segmentDirections = new Float32Array(this.strands.flat().flatMap((p, index, particles) => {
+            const p1 = (index < particles.length -1)? p: particles[index-1];
+            const p2 = (index < particles.length -1)? particles[index + 1]: p;
+            
+            const pos1 = this.object3D.worldToLocal(p1.position.clone());
+            const pos2 = this.object3D.worldToLocal(p2.position.clone());
+            const dir = pos2.sub(pos1);
+
+            return [dir.x, dir.y, dir.z];
+        }));
+
         const vertexBuffer = new BufferAttribute(vertices, 3);
         vertexBuffer.usage = StreamDrawUsage;
+        const directionBuffer = new BufferAttribute(segmentDirections, 3);
+        directionBuffer.usage = StreamDrawUsage;
 
         // const normalBuffer = new BufferAttribute(3)
 
@@ -87,6 +102,7 @@ export class Hair {
 
         this.geometry.setIndex(indices);
         this.geometry.setAttribute('position', vertexBuffer);
+        this.geometry.setAttribute('normal', directionBuffer);
     }
 
     private updateGeometry() {
@@ -95,9 +111,24 @@ export class Hair {
             return [pos.x, pos.y, pos.z];
         }));
 
+        const segmentDirections = new Float32Array(this.strands.flat().flatMap((p, index, particles) => {
+            const p1 = (index < particles.length -1)? p: particles[index-1];
+            const p2 = (index < particles.length -1)? particles[index + 1]: p;
+
+            const pos1 = this.object3D.worldToLocal(p1.position.clone());
+            const pos2 = this.object3D.worldToLocal(p2.position.clone());
+            const dir = pos2.sub(pos1);
+
+            return [dir.x, dir.y, dir.z];
+        }));
+
         const vertexBuffer = this.geometry.attributes['position'] as BufferAttribute;
+        const directionBuffer = this.geometry.attributes['normal'] as BufferAttribute;
+
         vertexBuffer.set(vertices);
+        directionBuffer.set(segmentDirections);
         this.geometry.attributes['position'].needsUpdate = true;
+        this.geometry.attributes['normal'].needsUpdate = true;
     }
 
     simulateCycle(deltaTime: number) {

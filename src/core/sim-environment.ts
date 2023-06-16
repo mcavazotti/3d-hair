@@ -1,4 +1,4 @@
-import { AxesHelper, BoxGeometry, Color, GridHelper, HemisphereLight, MeshStandardMaterial, Object3D, PerspectiveCamera, PlaneGeometry, Scene, SphereGeometry, Vector3, WebGLRenderer } from "three";
+import { AmbientLight, AxesHelper, Color, DirectionalLight, GridHelper, MeshStandardMaterial, Object3D, PerspectiveCamera, Scene, SphereGeometry, WebGLRenderer } from "three";
 import { OrbitControls } from "../third_party/OrbitControls";
 import { DragControls } from "../third_party/DragControls";
 import GUI from "lil-gui";
@@ -27,7 +27,8 @@ export class SimEnvironment {
 
 
     constructor() {
-        this.renderer = new WebGLRenderer();
+        this.renderer = new WebGLRenderer({antialias: true});
+        this.renderer.shadowMap.enabled = true;
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
 
@@ -44,6 +45,8 @@ export class SimEnvironment {
         const material = new MeshStandardMaterial({ color: 0x886644 });
         this.mainObject = new ExtendedMesh<ExtendedBufferGeometry, MeshStandardMaterial>(geometry, material);
         this.mainObject.position.y = 0.5;
+        this.mainObject.castShadow = true;
+        this.mainObject.receiveShadow = true;
         this.scene.add(this.mainObject);
 
         // this.bvhViz = new MeshBVHVisualizer(this.mainObject, 10);
@@ -52,14 +55,22 @@ export class SimEnvironment {
         this.hair = new Hair();
         this.mainObject.add(this.hair.object3D);
         this.hair.createHair(this.mainObject);
-        this.hair.simulationParameters.colliders = [this.mainObject]
+        this.hair.simulationParameters.colliders = [this.mainObject];
+        this.hair.object3D.receiveShadow = true;
+        this.hair.object3D.castShadow = true;
+
+        const light = new DirectionalLight(0xffffff);
+        light.position.set(10,5,0);
+        light.castShadow = true;
+        light.shadow.mapSize.width = 4098;
+        light.shadow.mapSize.height = 4098;
 
         this.auxiliaryObjects = new Map<string, Object3D>([
-            ['light', new HemisphereLight(0xffffff, 0x444444)],
+            ['light', light],
+            ['ambientLight', new AmbientLight(0xffffff, 0.2)],
             ['grid', new GridHelper(10, 11)],
             ['axes', new AxesHelper(2)],
         ]);
-        this.auxiliaryObjects.get('light')?.position.add(new Vector3(1, 0.5, 0));
 
         for (const obj of this.auxiliaryObjects.values()) {
             this.scene.add(obj);
