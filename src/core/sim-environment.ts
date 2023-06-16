@@ -58,15 +58,16 @@ export class SimEnvironment {
         this.hair.simulationParameters.colliders = [this.mainObject];
         this.hair.object3D.receiveShadow = true;
         this.hair.object3D.castShadow = true;
-
+        
         const light = new DirectionalLight(0xffffff);
+        this.hair.object3D.add(light)
         light.position.set(10,5,0);
         light.castShadow = true;
-        light.shadow.mapSize.width = 4098;
-        light.shadow.mapSize.height = 4098;
+        light.shadow.mapSize.width = 2048;
+        light.shadow.mapSize.height = 2048;
+        light.target = this.hair.object3D;
 
         this.auxiliaryObjects = new Map<string, Object3D>([
-            ['light', light],
             ['ambientLight', new AmbientLight(0xffffff, 0.2)],
             ['grid', new GridHelper(10, 11)],
             ['axes', new AxesHelper(2)],
