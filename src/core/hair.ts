@@ -11,6 +11,7 @@ export class Hair {
     strands!: Strand[];
     object3D: LineSegments;
     geometry!: BufferGeometry;
+    castShadows: boolean = true;
 
     constructor() {
         this.hairParameters = {
@@ -111,24 +112,27 @@ export class Hair {
             return [pos.x, pos.y, pos.z];
         }));
 
-        const segmentDirections = new Float32Array(this.strands.flat().flatMap((p, index, particles) => {
-            const p1 = (index < particles.length -1)? p: particles[index-1];
-            const p2 = (index < particles.length -1)? particles[index + 1]: p;
-
-            const pos1 = this.object3D.worldToLocal(p1.position.clone());
-            const pos2 = this.object3D.worldToLocal(p2.position.clone());
-            const dir = pos2.sub(pos1);
-
-            return [dir.x, dir.y, dir.z];
-        }));
-
         const vertexBuffer = this.geometry.attributes['position'] as BufferAttribute;
-        const directionBuffer = this.geometry.attributes['normal'] as BufferAttribute;
-
         vertexBuffer.set(vertices);
-        directionBuffer.set(segmentDirections);
         this.geometry.attributes['position'].needsUpdate = true;
-        this.geometry.attributes['normal'].needsUpdate = true;
+        
+        if(this.castShadows) {
+
+            const segmentDirections = new Float32Array(this.strands.flat().flatMap((p, index, particles) => {
+                const p1 = (index < particles.length -1)? p: particles[index-1];
+                const p2 = (index < particles.length -1)? particles[index + 1]: p;
+                
+                const pos1 = this.object3D.worldToLocal(p1.position.clone());
+                const pos2 = this.object3D.worldToLocal(p2.position.clone());
+                const dir = pos2.sub(pos1);
+                
+                return [dir.x, dir.y, dir.z];
+            }));
+            const directionBuffer = this.geometry.attributes['normal'] as BufferAttribute;
+            directionBuffer.set(segmentDirections);
+            this.geometry.attributes['normal'].needsUpdate = true;
+        }
+
     }
 
     simulateCycle(deltaTime: number) {

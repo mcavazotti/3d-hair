@@ -12,16 +12,22 @@ out vec4 fragColor;
 uniform vec3 uColor;
 
 void main() {
+    #ifdef USE_SHADOWMAP
     DirectionalLightShadow directionalShadow = directionalLightShadows[0];
-
+    
     float shadow = getShadow(
         directionalShadowMap[0],
         directionalShadow.shadowMapSize,
         directionalShadow.shadowBias,
         directionalShadow.shadowRadius,
         vDirectionalShadowCoord[0]
-    );
-    vec3 light = (directionalLights[0].color * shadow) + ambientLightColor;
+        );
+        #endif
+    vec3 light = (directionalLights[0].color 
+        #ifdef USE_SHADOWMAP
+            * shadow
+        #endif
+    ) + ambientLightColor;
 
     fragColor = vec4(uColor * light,1.0);
 }

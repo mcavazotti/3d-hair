@@ -27,7 +27,7 @@ export class SimEnvironment {
 
 
     constructor() {
-        this.renderer = new WebGLRenderer({antialias: true});
+        this.renderer = new WebGLRenderer({ antialias: true });
         this.renderer.shadowMap.enabled = true;
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(this.renderer.domElement);
@@ -58,16 +58,17 @@ export class SimEnvironment {
         this.hair.simulationParameters.colliders = [this.mainObject];
         this.hair.object3D.receiveShadow = true;
         this.hair.object3D.castShadow = true;
-        
+
         const light = new DirectionalLight(0xffffff);
         this.hair.object3D.add(light)
-        light.position.set(10,5,0);
+        light.position.set(10, 5, 0);
         light.castShadow = true;
         light.shadow.mapSize.width = 2048;
         light.shadow.mapSize.height = 2048;
         light.target = this.hair.object3D;
 
         this.auxiliaryObjects = new Map<string, Object3D>([
+            ['light', light],
             ['ambientLight', new AmbientLight(0xffffff, 0.2)],
             ['grid', new GridHelper(10, 11)],
             ['axes', new AxesHelper(2)],
@@ -98,6 +99,7 @@ export class SimEnvironment {
 
         this.guiControlObject = {
             mainObject: 'cube',
+            showShadows: true,
             fixedDeltaTime: false,
             runSimulation: true,
             simulateStep: () => {
@@ -154,24 +156,16 @@ export class SimEnvironment {
         this.gui = new GUI();
         this.gui.add(this.guiControlObject, 'openStats');
 
-        const objFolder = this.gui.addFolder('Main Object');
+        this.gui.add(this.guiControlObject, 'showShadows').onChange((val: boolean) => {
+            this.hair.object3D.castShadow = val;
+            this.hair.object3D.receiveShadow = val;
+            this.hair.castShadows = val;
+            this.mainObject.castShadow = val;
+            this.mainObject.receiveShadow = val;
+            (this.auxiliaryObjects.get('light') as DirectionalLight).castShadow = val;
+        });
 
-        // objFolder.add(this.guiControlObject, 'mainObject', ['cube', 'sphere', 'plane']).onChange((val: string) => {
-        //     this.mainObject.geometry.dispose();
-        //     switch (val) {
-        //         case 'cube':
-        //             this.mainObject.geometry = new ExtendedBufferGeometry(new BoxGeometry(1, 1, 1));
-        //             break;
-        //         case 'sphere':
-        //             this.mainObject.geometry = new ExtendedBufferGeometry(new SphereGeometry(0.5));
-        //             break;
-        //         case 'plane':
-        //             this.mainObject.geometry = new ExtendedBufferGeometry(new PlaneGeometry());
-        //             break;
-        //     }
-        //     this.hair.createHair(this.mainObject);
-        //     // this.bvhViz.update();
-        // });
+        const objFolder = this.gui.addFolder('Main Object');
         objFolder.add(this.mainObject.material, 'wireframe');
 
         const simFolder = this.gui.addFolder('Simulation Parameters')

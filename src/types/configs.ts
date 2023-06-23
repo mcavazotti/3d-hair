@@ -15,6 +15,7 @@ export interface SimulationParameters {
 
 export interface GuiControlObject {
     mainObject: 'cube' | 'sphere' | 'plane';
+    showShadows: boolean;
     simulateStep: Function;
     fixedDeltaTime: boolean;
     reset: Function;
