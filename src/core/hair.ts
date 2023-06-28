@@ -145,32 +145,29 @@ export class Hair {
         for (const strand of this.strands) {
             for (let i = 0; i < strand.length; i++) {
                 const particle = strand[i];
-                if (i == 0 && particle.vertexPos) {
+                if (i == 0) {
                     particle.prevPos.copy(particle.position);
-                    particle.position.copy(this.object3D.localToWorld(particle.vertexPos.clone()));
+                    particle.position.copy(this.object3D.localToWorld(particle.vertexPos!.clone()));
+                    particle.velocity.subVectors(particle.position,particle.prevPos).divideScalar(deltaTime);
                     continue;
                 }
 
                 particle.prevPos.copy(particle.position);
-                particle.position.addScaledVector(particle.velocity.addScaledVector(this.simulationParameters.gravity, deltaTime), deltaTime);
+                particle.position.addScaledVector(particle.velocity.clone().addScaledVector(this.simulationParameters.gravity, deltaTime), deltaTime);
 
                 /** SOLVE CONSTRAINTS */
-                const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength);
-                if (i > 0) {
-                    const p: Particle = {
-                        position: this.object3D.worldToLocal(particle.position),
-                        prevPos: new Vector3(),
-                        velocity: new Vector3()
-                    }
-                    spherePenetrationConstraint(p, this.object3D.position,0.5);
-                    particle.position = this.object3D.localToWorld(p.position);
+                const p: Particle = {
+                    position: this.object3D.worldToLocal(particle.position.clone()),
+                    prevPos: new Vector3(),
+                    velocity: new Vector3()
                 }
-
+                spherePenetrationConstraint(p, this.object3D.position,0.5);
+                particle.position = this.object3D.localToWorld(p.position);
+                const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength);
+                
                 /** UPDATE VELOCITIES*/
                 particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
-                if (i > 1)
-                    strand[i - 1].velocity.add(correction.multiplyScalar(-1 * this.simulationParameters.damping * (1 / deltaTime)));
-                continue;
+                strand[i - 1].velocity.add(correction.multiplyScalar(-this.simulationParameters.damping/ deltaTime));
             }
         }
     }
