@@ -21,8 +21,8 @@ export class Hair {
 
         this.simulationParameters = {
             gravity: new Vector3(0, -10, 0),
-            damping: 0.9,
-            steps: 1,
+            damping: 0.875,
+            steps: 2,
             colliders: []
         };
         this.geometry = new BufferGeometry();
@@ -59,7 +59,11 @@ export class Hair {
             const direction = new Vector3(normalBuffer.array[i], normalBuffer.array[i + 1], normalBuffer.array[i + 2]);
             direction.applyEuler(worldRotation);
 
-            const strand: Strand = [{ vertexPos: baseVertex, prevPos: transformedVertex.clone(), position: transformedVertex.clone(), velocity: new Vector3() }];
+            const strand: Strand = [
+                // Root vertex
+                { vertexPos: baseVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * -1), prevPos: transformedVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * -1), position: transformedVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * -1), velocity: new Vector3() },
+                { vertexPos: baseVertex, prevPos: transformedVertex.clone(), position: transformedVertex.clone(), velocity: new Vector3() }
+            ];
             for (let j = 1; j <= this.hairParameters.numberOfSegments; j++) {
                 strand.push({ prevPos: transformedVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * j), position: transformedVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * j), velocity: new Vector3() });
             }
@@ -145,7 +149,7 @@ export class Hair {
         for (const strand of this.strands) {
             for (let i = 0; i < strand.length; i++) {
                 const particle = strand[i];
-                if (i == 0) {
+                if (i <= 1) {
                     particle.prevPos.copy(particle.position);
                     particle.position.copy(this.object3D.localToWorld(particle.vertexPos!.clone()));
                     particle.velocity.subVectors(particle.position,particle.prevPos).divideScalar(deltaTime);
@@ -156,6 +160,7 @@ export class Hair {
                 particle.position.addScaledVector(particle.velocity.clone().addScaledVector(this.simulationParameters.gravity, deltaTime), deltaTime);
 
                 /** SOLVE CONSTRAINTS */
+                const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength);
                 const p: Particle = {
                     position: this.object3D.worldToLocal(particle.position.clone()),
                     prevPos: new Vector3(),
@@ -163,7 +168,6 @@ export class Hair {
                 }
                 spherePenetrationConstraint(p, this.object3D.position,0.5);
                 particle.position = this.object3D.localToWorld(p.position);
-                const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength);
                 
                 /** UPDATE VELOCITIES*/
                 particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);

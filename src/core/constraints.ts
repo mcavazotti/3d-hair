@@ -5,10 +5,10 @@ import { CONTAINED, NOT_INTERSECTED } from "three-mesh-bvh";
 
 export function distanceConstraint(particle: Particle, other: Particle, restDistance: number) {
     const dist = particle.position.distanceTo(other.position);
-    const delta = other.position.clone().sub(particle.position);
-    const correction = delta.normalize().multiplyScalar(-(restDistance - dist));
-    particle.position.add(correction);
-    return correction;
+    const gradient = other.position.clone().sub(particle.position).normalize();
+    const correction = -(restDistance - dist);
+    particle.position.addScaledVector(gradient, correction);
+    return gradient.multiplyScalar(correction);
 }
 
 export function spherePenetrationConstraint(particle: Particle, position: Vector3, radius: number) {
