@@ -17,6 +17,7 @@ export class Hair {
         this.hairParameters = {
             numberOfSegments: 20,
             segmentLength: 0.1,
+            particleRadius: 0.001,
         };
 
         this.simulationParameters = {
@@ -34,7 +35,7 @@ export class Hair {
             glslVersion: GLSL3,
             uniforms: {
                 ...UniformsLib.lights,
-                uColor: { value: new Color(0.2, 0.2, 0.05)}
+                uColor: { value: new Color(0.2, 0.2, 0.05) }
             }
         }));
     }
@@ -78,9 +79,9 @@ export class Hair {
         }));
 
         const segmentDirections = new Float32Array(this.strands.flat().flatMap((p, index, particles) => {
-            const p1 = (index < particles.length -1)? p: particles[index-1];
-            const p2 = (index < particles.length -1)? particles[index + 1]: p;
-            
+            const p1 = (index < particles.length - 1) ? p : particles[index - 1];
+            const p2 = (index < particles.length - 1) ? particles[index + 1] : p;
+
             const pos1 = this.object3D.worldToLocal(p1.position.clone());
             const pos2 = this.object3D.worldToLocal(p2.position.clone());
             const dir = pos2.sub(pos1);
@@ -119,17 +120,17 @@ export class Hair {
         const vertexBuffer = this.geometry.attributes['position'] as BufferAttribute;
         vertexBuffer.set(vertices);
         this.geometry.attributes['position'].needsUpdate = true;
-        
-        if(this.castShadows) {
+
+        if (this.castShadows) {
 
             const segmentDirections = new Float32Array(this.strands.flat().flatMap((p, index, particles) => {
-                const p1 = (index < particles.length -1)? p: particles[index-1];
-                const p2 = (index < particles.length -1)? particles[index + 1]: p;
-                
+                const p1 = (index < particles.length - 1) ? p : particles[index - 1];
+                const p2 = (index < particles.length - 1) ? particles[index + 1] : p;
+
                 const pos1 = this.object3D.worldToLocal(p1.position.clone());
                 const pos2 = this.object3D.worldToLocal(p2.position.clone());
                 const dir = pos2.sub(pos1);
-                
+
                 return [dir.x, dir.y, dir.z];
             }));
             const directionBuffer = this.geometry.attributes['normal'] as BufferAttribute;
@@ -152,7 +153,7 @@ export class Hair {
                 if (i <= 1) {
                     particle.prevPos.copy(particle.position);
                     particle.position.copy(this.object3D.localToWorld(particle.vertexPos!.clone()));
-                    particle.velocity.subVectors(particle.position,particle.prevPos).divideScalar(deltaTime);
+                    particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
                     continue;
                 }
 
@@ -160,18 +161,24 @@ export class Hair {
                 particle.position.addScaledVector(particle.velocity.clone().addScaledVector(this.simulationParameters.gravity, deltaTime), deltaTime);
 
                 /** SOLVE CONSTRAINTS */
-                const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength);
+                const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength, deltaTime, 0, undefined, Infinity)[0];
                 const p: Particle = {
                     position: this.object3D.worldToLocal(particle.position.clone()),
                     prevPos: new Vector3(),
                     velocity: new Vector3()
                 }
-                spherePenetrationConstraint(p, this.object3D.position,0.5);
+                spherePenetrationConstraint(p, this.object3D.position, 0.5);
                 particle.position = this.object3D.localToWorld(p.position);
-                
+
                 /** UPDATE VELOCITIES*/
                 particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
-                strand[i - 1].velocity.add(correction.multiplyScalar(-this.simulationParameters.damping/ deltaTime));
+                strand[i - 1].velocity.add(correction.multiplyScalar(-this.simulationParameters.damping / deltaTime));
+
+                // clamp velocity
+                const maxVelocity = (this.hairParameters.segmentLength/ this.hairParameters.particleRadius) * this.simulationParameters.steps / deltaTime;
+                particle.velocity.clampLength(0, maxVelocity);
+                strand[i - 1].velocity.clampLength(0, maxVelocity);
+
             }
         }
     }

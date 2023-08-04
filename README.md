@@ -16,3 +16,5 @@ Implement a real-time hair simulator with the following features:
   - Having more substeps increases the changes of jittering happening
   - Solving for penetration first attenuate problem
     - This requires more substeps or deltaTime small enough to garantee constraint is maintained
+- (04/08/23) Made yet another change in the calculation of the distance constraint, this time to implement compliance. Clamp velocity helps solving jittering
+  - Adapted the formula from [Matthias Muller](https://matthias-research.github.io/pages/tenMinutePhysics/15-selfCollision.pdf): instead of considering only the particle radius, I used `segmentLength / particleRadius`.

@@ -4,6 +4,7 @@ import { ExtendedMesh } from "../auxiliary/extended-types";
 export interface HairParameters {
     numberOfSegments: number;
     segmentLength: number;
+    particleRadius: number;
 }
 
 export interface SimulationParameters {
