@@ -13,11 +13,17 @@ export class Hair {
     geometry!: BufferGeometry;
     castShadows: boolean = true;
 
+    // to test if there's a difference in using the deltaThete = cosine(angle) - cosine(rest)
+    // private restAngleCos!: number;
+
     constructor() {
         this.hairParameters = {
             numberOfSegments: 20,
             segmentLength: 0.1,
             particleRadius: 0.001,
+            restAngle: 180,
+            stiffness: 400,
+            particleMass: 1,
         };
 
         this.simulationParameters = {
@@ -70,6 +76,7 @@ export class Hair {
             }
             this.strands.push(strand);
         }
+        console.log(this.strands.map(s => s.length - 2).reduce((a, b) => a + b) + " particles");
     }
 
     private setGeometry() {
@@ -147,6 +154,8 @@ export class Hair {
     }
 
     simulateStep(deltaTime: number) {
+        // this.restAngleCos = Math.cos(this.hairParameters.restAngle / 180 * Math.PI);
+        const maxVelocity = (this.hairParameters.segmentLength / this.hairParameters.particleRadius) * this.simulationParameters.steps / deltaTime;
         for (const strand of this.strands) {
             for (let i = 0; i < strand.length; i++) {
                 const particle = strand[i];
@@ -157,11 +166,31 @@ export class Hair {
                     continue;
                 }
 
+                const acceleration = this.simulationParameters.gravity.clone();
+
+                const elasticAcc = this.computeStiffnessAcc(particle.position, strand[i - 1].position, strand[i - 2].position);
+                let multiplier = 2;
+                if (i > 3) {
+                    multiplier = 1;
+                    strand[i - 2].velocity.addScaledVector(elasticAcc[1].clampLength(0,maxVelocity), deltaTime);
+                }
+                acceleration.add(elasticAcc[0].multiplyScalar(multiplier).clampLength(0, maxVelocity));
+                particle.velocity.addScaledVector(acceleration, deltaTime);
+            }
+        }
+
+        for (const strand of this.strands) {
+            for (let i = 2; i < strand.length; i++) {
+
+
+                const particle = strand[i];
+                /** UPDATE POSITIONS */
                 particle.prevPos.copy(particle.position);
-                particle.position.addScaledVector(particle.velocity.clone().addScaledVector(this.simulationParameters.gravity, deltaTime), deltaTime);
+
+                particle.position.addScaledVector(particle.velocity, deltaTime);
 
                 /** SOLVE CONSTRAINTS */
-                const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength, deltaTime, 0, undefined, Infinity)[0];
+                const correction = distanceConstraint(particle, strand[i - 1], this.hairParameters.segmentLength, deltaTime, 0, undefined, Infinity);
                 const p: Particle = {
                     position: this.object3D.worldToLocal(particle.position.clone()),
                     prevPos: new Vector3(),
@@ -172,14 +201,41 @@ export class Hair {
 
                 /** UPDATE VELOCITIES*/
                 particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
-                strand[i - 1].velocity.add(correction.multiplyScalar(-this.simulationParameters.damping / deltaTime));
+                strand[i - 1].velocity.add(correction[0].multiplyScalar(-this.simulationParameters.damping / deltaTime));
+                strand[i - 2].velocity.add(correction[1].multiplyScalar(-this.simulationParameters.damping / deltaTime));
 
                 // clamp velocity
-                const maxVelocity = (this.hairParameters.segmentLength/ this.hairParameters.particleRadius) * this.simulationParameters.steps / deltaTime;
                 particle.velocity.clampLength(0, maxVelocity);
                 strand[i - 1].velocity.clampLength(0, maxVelocity);
 
             }
         }
+    }
+
+    computeStiffnessAcc(p1: Vector3, p2: Vector3, p3: Vector3): [Vector3, Vector3] {
+        const v1 = new Vector3().subVectors(p1, p2).normalize();
+        const v2 = new Vector3().subVectors(p3, p2).normalize();
+
+        const dot = Math.max(-1, Math.min(v1.dot(v2), 1));
+        const angle = Math.acos(dot);
+        const restAngleRad = this.hairParameters.restAngle / 180 * Math.PI;
+        // const deltaTheta = -(dot - this.restAngleCos);
+        const deltaTheta = (angle - restAngleRad);
+
+        const torque = this.hairParameters.stiffness * deltaTheta;
+        const f = torque;
+        const acc = f / this.hairParameters.particleMass * (1 - this.simulationParameters.damping);
+
+        if (isNaN(acc)) {
+            throw Error("NAN!!!!!!!!!!!!!!!")
+        }
+
+        const direction1 = v2.clone().sub(v1.clone().multiplyScalar(v1.dot(v2))).multiplyScalar(0.5);
+        const direction2 = v1.clone().sub(v2.clone().multiplyScalar(v2.dot(v1))).multiplyScalar(0.5);
+        
+
+        return [direction1.multiplyScalar(acc), direction2.multiplyScalar(acc)];
+
+
     }
 }

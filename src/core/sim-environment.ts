@@ -1,4 +1,4 @@
-import { AmbientLight, AxesHelper, Color, DirectionalLight, GridHelper, MeshStandardMaterial, Object3D, PerspectiveCamera, Scene, SphereGeometry, WebGLRenderer } from "three";
+import { AmbientLight, AxesHelper, Color, DirectionalLight, GridHelper, MeshStandardMaterial, Object3D, PerspectiveCamera, /*PlaneGeometry,*/ Scene, SphereGeometry, WebGLRenderer } from "three";
 import { OrbitControls } from "../third_party/OrbitControls";
 import { DragControls } from "../third_party/DragControls";
 import GUI from "lil-gui";
@@ -7,6 +7,7 @@ import { Hair } from "./hair";
 import { StatsEnvironment } from "./stats-environment";
 import { PopUp } from "../auxiliary/popup";
 import { ExtendedBufferGeometry, ExtendedMesh } from "../auxiliary/extended-types";
+import { FPS } from "yy-fps";
 // import { MeshBVHVisualizer } from "three-mesh-bvh";
 
 export class SimEnvironment {
@@ -19,6 +20,7 @@ export class SimEnvironment {
     private auxiliaryObjects: Map<string, Object3D>;
     private dragControl: DragControls;
     private gui!: GUI;
+    private fps!: FPS;
     private guiControlObject: GuiControlObject;
     private statsEnv?: StatsEnvironment;
     // private bvhViz: MeshBVHVisualizer;
@@ -41,6 +43,7 @@ export class SimEnvironment {
 
         this.cameraControl = new OrbitControls(this.camera, this.renderer.domElement);
 
+        // const geometry = new ExtendedBufferGeometry(new PlaneGeometry(1,1));
         const geometry = new ExtendedBufferGeometry(new SphereGeometry(0.5));
         const material = new MeshStandardMaterial({ color: 0x886644 });
         this.mainObject = new ExtendedMesh<ExtendedBufferGeometry, MeshStandardMaterial>(geometry, material);
@@ -63,8 +66,8 @@ export class SimEnvironment {
         this.hair.object3D.add(light)
         light.position.set(10, 5, 0);
         light.castShadow = true;
-        light.shadow.mapSize.width = 2048;
-        light.shadow.mapSize.height = 2048;
+        light.shadow.mapSize.width = 1024;
+        light.shadow.mapSize.height = 1024;
         light.target = this.hair.object3D;
 
         this.auxiliaryObjects = new Map<string, Object3D>([
@@ -149,10 +152,12 @@ export class SimEnvironment {
         }
 
         this.renderer.render(this.scene, this.camera);
+        this.fps.frame();
         requestAnimationFrame(this.loop.bind(this));
     }
 
     private setupGui() {
+        this.fps = new FPS();
         this.gui = new GUI();
         this.gui.add(this.guiControlObject, 'openStats');
 
@@ -168,7 +173,10 @@ export class SimEnvironment {
         const objFolder = this.gui.addFolder('Main Object');
         objFolder.add(this.mainObject.material, 'wireframe');
 
-        const simFolder = this.gui.addFolder('Simulation Parameters')
+        const simFolder = this.gui.addFolder('Simulation Parameters');
+        simFolder.add(this.hair.hairParameters, 'particleMass');
+        simFolder.add(this.hair.hairParameters, 'restAngle',0,180);
+        simFolder.add(this.hair.hairParameters, 'stiffness');
         simFolder.add(this.hair.hairParameters, 'numberOfSegments', 1, 100, 1).onChange(() => {
             this.hair.geometry.dispose();
             this.hair.createHair(this.mainObject);

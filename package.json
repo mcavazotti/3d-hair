@@ -17,6 +17,7 @@
     "chart.js": "^4.3.0",
     "lil-gui": "^0.18.1",
     "three": "^0.152.2",
-    "three-mesh-bvh": "^0.5.24"
+    "three-mesh-bvh": "^0.5.24",
+    "yy-fps": "^2.0.1"
   }
 }

@@ -5,6 +5,9 @@ export interface HairParameters {
     numberOfSegments: number;
     segmentLength: number;
     particleRadius: number;
+    restAngle: number;
+    stiffness: number;
+    particleMass: number;
 }
 
 export interface SimulationParameters {
