@@ -22,7 +22,7 @@ export class Hair {
             segmentLength: 0.1,
             particleRadius: 0.001,
             restAngle: 180,
-            stiffness: 400,
+            stiffness: 0,
             particleMass: 1,
         };
 
