@@ -1,3 +1,6 @@
+Notice:
+- This project is incomplete. I'll finish it some time in the future
+
 # Goal:
 Implement a real-time hair simulator with the following features:
 1. Hair-mesh collision
