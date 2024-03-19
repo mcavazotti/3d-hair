@@ -1,4 +1,4 @@
-import { AmbientLight, AxesHelper, Color, DirectionalLight, GridHelper, MeshStandardMaterial, Object3D, PerspectiveCamera, /*PlaneGeometry,*/ Scene, SphereGeometry, WebGLRenderer } from "three";
+import { AmbientLight, AxesHelper, BoxGeometry, Color, DirectionalLight, GridHelper, MeshStandardMaterial, Object3D, PerspectiveCamera, PlaneGeometry, /*PlaneGeometry,*/ Scene, SphereGeometry, WebGLRenderer } from "three";
 import { OrbitControls } from "../third_party/OrbitControls";
 import { DragControls } from "../third_party/DragControls";
 import GUI from "lil-gui";
@@ -101,10 +101,10 @@ export class SimEnvironment {
         });
 
         this.guiControlObject = {
-            mainObject: 'cube',
+            mainObject: 'sphere',
             showShadows: true,
             fixedDeltaTime: false,
-            runSimulation: true,
+            runSimulation: false,
             simulateStep: () => {
                 this.hair.simulateCycle(1 / 60);
                 if (this.statsEnv) {
@@ -171,12 +171,33 @@ export class SimEnvironment {
         });
 
         const objFolder = this.gui.addFolder('Main Object');
+        objFolder.add(this.guiControlObject, 'mainObject', ['cube', 'sphere', 'plane']).onChange((val: 'cube' | 'sphere' | 'plane') => {
+            this.mainObject.geometry.dispose();
+            switch (val) {
+                case "cube":
+                    this.mainObject.geometry = new ExtendedBufferGeometry(new BoxGeometry);
+                    break;
+                case "sphere":
+                    this.mainObject.geometry = new ExtendedBufferGeometry(new SphereGeometry(0.5));
+                    break;
+                case "plane":
+                    this.mainObject.geometry = new ExtendedBufferGeometry(new PlaneGeometry(1, 1));
+                    break;
+            }
+
+            this.hair.geometry.dispose();
+            this.hair.createHair(this.mainObject);
+        });
         objFolder.add(this.mainObject.material, 'wireframe');
 
         const simFolder = this.gui.addFolder('Simulation Parameters');
         simFolder.add(this.hair.hairParameters, 'particleMass');
-        simFolder.add(this.hair.hairParameters, 'restAngle',0,180);
+        simFolder.add(this.hair.hairParameters, 'restAngle', 0, 180);
         simFolder.add(this.hair.hairParameters, 'stiffness');
+        simFolder.add(this.hair.hairParameters, 'curlyHair').onChange(() => {
+            this.hair.geometry.dispose();
+            this.hair.createHair(this.mainObject);
+        });
         simFolder.add(this.hair.hairParameters, 'numberOfSegments', 1, 100, 1).onChange(() => {
             this.hair.geometry.dispose();
             this.hair.createHair(this.mainObject);

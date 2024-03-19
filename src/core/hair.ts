@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, Color, GLSL3, LineSegments, Mesh, ShaderMaterial, StreamDrawUsage, UniformsLib, Vector3 } from "three";
+import { BufferAttribute, BufferGeometry, Color, Euler, GLSL3, LineSegments, Mesh, Quaternion, ShaderMaterial, StreamDrawUsage, UniformsLib, Vector3 } from "three";
 import { HairParameters, SimulationParameters } from "../types/configs";
 import { Strand, Particle } from "../types/particle";
 import { distanceConstraint, spherePenetrationConstraint } from "./constraints";
@@ -23,6 +23,7 @@ export class Hair {
             particleRadius: 0.001,
             restAngle: 180,
             stiffness: 0,
+            curlyHair: true,
             particleMass: 1,
         };
 
@@ -66,17 +67,43 @@ export class Hair {
             const direction = new Vector3(normalBuffer.array[i], normalBuffer.array[i + 1], normalBuffer.array[i + 2]);
             direction.applyEuler(worldRotation);
 
-            const strand: Strand = [
-                // Root vertex
-                { vertexPos: baseVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * -1), prevPos: transformedVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * -1), position: transformedVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * -1), velocity: new Vector3() },
-                { vertexPos: baseVertex, prevPos: transformedVertex.clone(), position: transformedVertex.clone(), velocity: new Vector3() }
-            ];
-            for (let j = 1; j <= this.hairParameters.numberOfSegments; j++) {
-                strand.push({ prevPos: transformedVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * j), position: transformedVertex.clone().addScaledVector(direction, this.hairParameters.segmentLength * j), velocity: new Vector3() });
-            }
+            const strand = this.generateStrand(transformedVertex, baseVertex, direction, this.hairParameters.curlyHair ? new Euler(0,0, Math.PI / 4):undefined);
             this.strands.push(strand);
         }
         console.log(this.strands.map(s => s.length - 2).reduce((a, b) => a + b) + " particles");
+    }
+
+    private generateStrand(root: Vector3, rootVertex: Vector3, normal: Vector3, twist?: Euler): Strand {
+        const strand: Strand = [];
+
+        const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), normal.clone().normalize());
+
+        for (let i = 0; i < this.hairParameters.numberOfSegments; i++) {
+            let particle: Particle;
+            if (i == 0) {
+                particle = { position: new Vector3(), velocity: new Vector3(), prevPos: new Vector3(), vertexPos: rootVertex.clone() };
+            } else {
+                particle = { position: new Vector3(0, i * this.hairParameters.segmentLength, 0), velocity: new Vector3(), prevPos: new Vector3(0, i * this.hairParameters.segmentLength, 0) };
+                if(twist) {
+                    const localTwist = twist.clone();
+                    localTwist.z*=i;
+                    particle.position
+                        .applyEuler(localTwist);
+                    particle.prevPos
+                        .applyEuler(localTwist);
+                }
+            }
+
+            particle.position
+                .applyQuaternion(rotation)
+                .add(root);
+            particle.prevPos
+                .applyQuaternion(rotation)
+                .add(root);
+            strand.push(particle);
+        }
+        return strand;
+
     }
 
     private setGeometry() {
@@ -159,7 +186,7 @@ export class Hair {
         for (const strand of this.strands) {
             for (let i = 0; i < strand.length; i++) {
                 const particle = strand[i];
-                if (i <= 1) {
+                if (i == 0) {
                     particle.prevPos.copy(particle.position);
                     particle.position.copy(this.object3D.localToWorld(particle.vertexPos!.clone()));
                     particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
@@ -168,19 +195,12 @@ export class Hair {
 
                 const acceleration = this.simulationParameters.gravity.clone();
 
-                const elasticAcc = this.computeStiffnessAcc(particle.position, strand[i - 1].position, strand[i - 2].position);
-                let multiplier = 2;
-                if (i > 3) {
-                    multiplier = 1;
-                    strand[i - 2].velocity.addScaledVector(elasticAcc[1].clampLength(0,maxVelocity), deltaTime);
-                }
-                acceleration.add(elasticAcc[0].multiplyScalar(multiplier).clampLength(0, maxVelocity));
                 particle.velocity.addScaledVector(acceleration, deltaTime);
             }
         }
 
         for (const strand of this.strands) {
-            for (let i = 2; i < strand.length; i++) {
+            for (let i = 1; i < strand.length; i++) {
 
 
                 const particle = strand[i];
@@ -202,7 +222,7 @@ export class Hair {
                 /** UPDATE VELOCITIES*/
                 particle.velocity.subVectors(particle.position, particle.prevPos).divideScalar(deltaTime);
                 strand[i - 1].velocity.add(correction[0].multiplyScalar(-this.simulationParameters.damping / deltaTime));
-                strand[i - 2].velocity.add(correction[1].multiplyScalar(-this.simulationParameters.damping / deltaTime));
+                // strand[i - 2].velocity.add(correction[1].multiplyScalar(-this.simulationParameters.damping / deltaTime));
 
                 // clamp velocity
                 particle.velocity.clampLength(0, maxVelocity);
@@ -232,7 +252,7 @@ export class Hair {
 
         const direction1 = v2.clone().sub(v1.clone().multiplyScalar(v1.dot(v2))).multiplyScalar(0.5);
         const direction2 = v1.clone().sub(v2.clone().multiplyScalar(v2.dot(v1))).multiplyScalar(0.5);
-        
+
 
         return [direction1.multiplyScalar(acc), direction2.multiplyScalar(acc)];
 

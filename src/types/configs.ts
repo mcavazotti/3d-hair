@@ -5,6 +5,7 @@ export interface HairParameters {
     numberOfSegments: number;
     segmentLength: number;
     particleRadius: number;
+    curlyHair: boolean;
     restAngle: number;
     stiffness: number;
     particleMass: number;
