@@ -67,13 +67,13 @@ export class Hair {
             const direction = new Vector3(normalBuffer.array[i], normalBuffer.array[i + 1], normalBuffer.array[i + 2]);
             direction.applyEuler(worldRotation);
 
-            const strand = this.generateStrand(transformedVertex, baseVertex, direction, this.hairParameters.curlyHair ? new Euler(0,0, Math.PI / 4):undefined);
+            const strand = this.generateStrand(transformedVertex, baseVertex, direction, this.hairParameters.curlyHair ? new Euler(0, Math.PI / 4, Math.PI /2) : undefined, Math.random());
             this.strands.push(strand);
         }
         console.log(this.strands.map(s => s.length - 2).reduce((a, b) => a + b) + " particles");
     }
 
-    private generateStrand(root: Vector3, rootVertex: Vector3, normal: Vector3, twist?: Euler): Strand {
+    private generateStrand(root: Vector3, rootVertex: Vector3, normal: Vector3, twist?: Euler, noise?: number): Strand {
         const strand: Strand = [];
 
         const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), normal.clone().normalize());
@@ -83,15 +83,13 @@ export class Hair {
             if (i == 0) {
                 particle = { position: new Vector3(), velocity: new Vector3(), prevPos: new Vector3(), vertexPos: rootVertex.clone() };
             } else {
-                particle = { position: new Vector3(0, i * this.hairParameters.segmentLength, 0), velocity: new Vector3(), prevPos: new Vector3(0, i * this.hairParameters.segmentLength, 0) };
-                if(twist) {
+                const segment = new Vector3(0, this.hairParameters.segmentLength, 0);
+                if (twist) {
                     const localTwist = twist.clone();
-                    localTwist.z*=i;
-                    particle.position
-                        .applyEuler(localTwist);
-                    particle.prevPos
-                        .applyEuler(localTwist);
+                    localTwist.y = twist.y * i + Math.PI*(noise??0);
+                    segment.applyEuler(localTwist);
                 }
+                particle = { position: new Vector3(0, i * this.hairParameters.segmentLength).add(segment), velocity: new Vector3(), prevPos: new Vector3(0, i * this.hairParameters.segmentLength).add(segment) };
             }
 
             particle.position
