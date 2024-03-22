@@ -67,7 +67,7 @@ export class Hair {
             const direction = new Vector3(normalBuffer.array[i], normalBuffer.array[i + 1], normalBuffer.array[i + 2]);
             direction.applyEuler(worldRotation);
 
-            const strand = this.generateStrand(transformedVertex, baseVertex, direction, this.hairParameters.curlyHair ? new Euler(0, Math.PI / 4, Math.PI /2) : undefined, Math.random());
+            const strand = this.generateStrand(transformedVertex, baseVertex, direction, this.hairParameters.curlyHair ? new Euler(0, Math.PI / 4, Math.PI /3) : undefined, Math.random());
             this.strands.push(strand);
         }
         console.log(this.strands.map(s => s.length - 2).reduce((a, b) => a + b) + " particles");
@@ -81,7 +81,8 @@ export class Hair {
         for (let i = 0; i < this.hairParameters.numberOfSegments; i++) {
             let particle: Particle;
             if (i == 0) {
-                particle = { position: new Vector3(), velocity: new Vector3(), prevPos: new Vector3(), vertexPos: rootVertex.clone() };
+                particle = { position: new Vector3(), velocity: new Vector3(), prevPos: new Vector3(), vertexPos: rootVertex.clone(), auxPoint: new Vector3(1), normal: normal };
+                particle.auxPoint!.applyQuaternion(rotation).add(root);
             } else {
                 const segment = new Vector3(0, this.hairParameters.segmentLength, 0);
                 if (twist) {
@@ -89,7 +90,7 @@ export class Hair {
                     localTwist.y = twist.y * i + Math.PI*(noise??0);
                     segment.applyEuler(localTwist);
                 }
-                particle = { position: new Vector3(0, i * this.hairParameters.segmentLength).add(segment), velocity: new Vector3(), prevPos: new Vector3(0, i * this.hairParameters.segmentLength).add(segment) };
+                particle = { position: new Vector3(0, segment.y * i).add(segment), velocity: new Vector3(), prevPos: new Vector3(0, segment.y * i).add(segment) };
             }
 
             particle.position
@@ -99,6 +100,17 @@ export class Hair {
                 .applyQuaternion(rotation)
                 .add(root);
             strand.push(particle);
+        }
+
+        for (let i = 0; i < this.hairParameters.numberOfSegments; i++) {
+            const particle = strand[i];
+            const ax1 = particle.normal?.normalize() ?? strand[i].position.clone().sub(strand[i-1].position).normalize();
+            let ax2: Vector3;
+            if(particle.auxPoint) {
+                ax2 = particle.auxPoint.clone().sub(particle.position).normalize();
+            } else {
+                
+            }
         }
         return strand;
 

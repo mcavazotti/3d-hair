@@ -3,7 +3,10 @@ import { Vector3 } from "three";
 export interface Particle {
     prevPos: Vector3;
     vertexPos?: Vector3;
-    mass?:number;
+    auxPoint?: Vector3;
+    childLocalPos?: Vector3;
+    normal?: Vector3;
+    mass?: number;
     position: Vector3;
     velocity: Vector3;
 }
